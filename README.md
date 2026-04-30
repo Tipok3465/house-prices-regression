@@ -124,7 +124,7 @@ predictions = np.expm1(predictions_log)
 ## Структура репозитория
 
 ```text
-house-price-prediction/
+house-price-regression/
 │
 ├── data/
 │   ├── raw/
@@ -259,23 +259,19 @@ submissions/submission_ridge_tuned.csv
 
 ## Следующие шаги
 
-Перед переходом к более сложным моделям необходимо закрыть воспроизводимость пайплайна.
+Следующий этап проекта -- сравнение нескольких классов моделей в одинаковых условиях.
 
-Ближайшие шаги:
-
-- вынести feature engineering в `src/features.py`;
-- вынести scoring, создание submission-файлов и сохранение результатов в `src/utils.py`;
-- обновить `03_feature_engineering.ipynb`, чтобы эксперименты запускались через функции из `src/`;
-- создать `04_modeling.ipynb`;
-- сравнить несколько классов моделей:
+План для `04_modeling.ipynb`:
+- сравнить линейные модели:
   - Ridge;
   - Lasso;
   - ElasticNet;
+- сравнить Random Forest:
   - RandomForestRegressor;
+- сравнить модели градиентного бустинга из scikit-learn:
   - HistGradientBoostingRegressor;
   - GradientBoostingRegressor;
-- после этого попробовать:
+- зафиксировать результаты в `reports/model_results.csv`;
+- после этого отдельно попробовать:
   - XGBoost;
   - LightGBM.
-
-Главная цель следующего этапа -- сравнить линейные модели, случайный лес и градиентный бустинг в одинаковых условиях.

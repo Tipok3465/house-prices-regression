@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 
 NONE_COLUMNS = [
@@ -92,3 +93,23 @@ def apply_feature_engineering(df: pd.DataFrame) -> pd.DataFrame:
     df = add_house_features(df)
 
     return df
+
+def prepare_features(
+    train: pd.DataFrame,
+    test: pd.DataFrame,
+) -> tuple[pd.DataFrame, pd.Series, pd.DataFrame]:
+    """
+    Prepares train and test datasets for training the model.
+    """
+    train = train.copy()
+    test = test.copy()
+
+    y = np.log1p(train["SalePrice"])
+
+    X = train.drop(columns=["SalePrice", "Id"])
+    X_test = test.drop(columns=["Id"])
+
+    X = apply_feature_engineering(X)
+    X_test = apply_feature_engineering(X_test)
+
+    return X, y, X_test
