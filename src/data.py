@@ -1,8 +1,9 @@
 from pathlib import Path
 import pandas as pd
 
-RAW_DATA_DIR = Path("data/raw")
-PROCESSED_DATA_DIR = Path("data/processed")
+BASE_DIR = Path(__file__).resolve().parent.parent
+RAW_DATA_DIR = BASE_DIR / "data" / "raw"
+PROCESSED_DATA_DIR = BASE_DIR / "data" / "processed"
 
 
 def load_train() -> pd.DataFrame:
