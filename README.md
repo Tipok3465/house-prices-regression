@@ -79,10 +79,10 @@ predictions = np.expm1(predictions_log)
 Текущий лучший результат на Kaggle Public Leaderboard:
 
 ```text
-0.13375
+0.13262
 ```
 
-Этот результат получен с помощью baseline-модели на основе **Ridge Regression** и простого preprocessing pipeline.
+Лучший результат получен с помощью Ridge Regression после feature engineering и подбора параметра регуляризации `alpha`.
 
 ---
 
@@ -97,21 +97,23 @@ predictions = np.expm1(predictions_log)
 4. Анализ пропусков
 5. Анализ корреляций
 6. Построение baseline preprocessing pipeline
-7. Обучение Ridge Regression
-8. Оценка качества через cross-validation
-9. Генерация submission-файла
-10. Сохранение результатов эксперимента
+7. Обучение baseline Ridge Regression
+8. Feature engineering
+9. Проверка влияния удаления выбросов
+10. Подбор alpha для Ridge Regression
+11. Оценка качества через cross-validation
+12. Генерация submission-файлов
+13. Сохранение результатов экспериментов
 ```
 
 Планируемые следующие шаги:
 
 ```text
-11. Улучшенная обработка пропусков
-12. Feature engineering
-13. Удаление выбросов
-14. Сравнение нескольких моделей
-15. Подбор гиперпараметров
-16. Сохранение лучшей модели
+1. Вынести feature engineering в src/features.py
+2. Сделать единый train.py для воспроизводимого обучения
+3. Сравнить несколько моделей
+4. Подобрать гиперпараметры для лучших моделей
+5. Сохранить лучшую модель в models/
 ```
 
 ---
@@ -148,7 +150,9 @@ house-price-prediction/
 │   └── utils.py
 │
 ├── submissions/
-│   └── submission_baseline.csv
+│   ├── submission_baseline.csv
+│   ├── submission_feature_engineering.csv
+│   └── submission_ridge_tuned.csv
 │
 ├── README.md
 ├── requirements.txt
@@ -166,7 +170,7 @@ Ridge была выбрана как baseline-модель, потому что:
 - она простая и быстро обучается;
 - хорошо подходит для первой проверки пайплайна;
 - работает с большим количеством one-hot encoded признаков;
-- использует регуляризацию, которая помогает бороться переобучение;
+- использует регуляризацию, которая помогает бороться с переобучением;
 - даёт понятную стартовую точку для дальнейших улучшений.
 
 Preprocessing реализован через `Pipeline` и `ColumnTransformer`.
@@ -194,6 +198,9 @@ OneHotEncoder(handle_unknown="ignore")
 | Experiment | Model | CV RMSE | CV std | Kaggle score | Notes |
 |---|---|---:|---:|---:|---|
 | 001 | Ridge | 0.14679 | 0.03932 | 0.13375 | baseline |
+| 002 | Ridge | 0.11489 | 0.00818 | 0.13435 | feature engineering + outlier removal |
+| 003 | Ridge | 0.14711 | 0.03976 | 0.13360 | feature engineering without outlier removal |
+| 004 | Ridge tuned | 0.14700 | 0.03976 | 0.13262 | feature engineering + tuned alpha without outlier removal |
 
 Результаты также сохраняются в файл:
 
@@ -224,28 +231,33 @@ data_description.txt
 ```text
 notebooks/01_eda.ipynb
 notebooks/02_baseline.ipynb
+notebooks/03_feature_engineering.ipynb
 ```
 
-4. После запуска baseline-ноутбука submission-файл будет сохранён в:
+4. После запуска submission-файлы будут сохранены в:
 
 ```text
 submissions/submission_baseline.csv
+submissions/submission_feature_engineering.csv
+submissions/submission_ridge_tuned.csv
 ```
 
 ---
 
 ## Следующие шаги
 
-Следующий этап проекта — **feature engineering**.
+Следующий этап проекта -- вынести логику feature engineering из ноутбука в модуль `src/features.py`, чтобы пайплайн стал воспроизводимым и мог запускаться из `src/train.py`.
 
 Планируемые улучшения:
 
-- обработать пропуски с учётом смысла признаков;
-- заменить некоторые пропуски;
-- удалить очевидные выбросы;
+- вынести обработку пропусков и создание новых признаков в функции;
+- обновить `src/train.py`;
 - сравнить несколько моделей:
   - Lasso;
+  - ElasticNet;
   - Random Forest;
   - Gradient Boosting;
   - XGBoost;
-  - LightGBM.
+  - LightGBM;
+- сохранить лучшую модель в `models/`;
+- обновить `reports/model_results.csv`.
