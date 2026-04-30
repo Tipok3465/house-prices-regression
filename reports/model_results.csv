@@ -1,0 +1,2 @@
+Experiment,Model,CV RMSE,CV std,Kaggle score,Notes
+001,Ridge,0.14679,0.03932,0.13375,baseline
