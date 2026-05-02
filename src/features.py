@@ -94,6 +94,7 @@ def apply_feature_engineering(df: pd.DataFrame) -> pd.DataFrame:
 
     return df
 
+
 def prepare_features(
     train: pd.DataFrame,
     test: pd.DataFrame,

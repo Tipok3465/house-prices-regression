@@ -86,6 +86,9 @@ def save_experiment_result(
     else:
         results = new_result
 
+    results["Experiment"] = results["Experiment"].astype(str).str.zfill(3)
+    results = results.sort_values("Experiment").reset_index(drop=True)
+
     results.to_csv(results_path, index=False)
 
     return results
