@@ -6,7 +6,7 @@ import pandas as pd
 from sklearn.model_selection import cross_val_score
 
 
-def evaluate_model(model, X, y, cv):
+def evaluate_model(model, X, y, cv, n_jobs=-1):
     """
     Evaluate model with cross-validation using RMSE on log-transformed target.
     """
@@ -16,7 +16,7 @@ def evaluate_model(model, X, y, cv):
         y,
         scoring="neg_root_mean_squared_error",
         cv=cv,
-        n_jobs=-1,
+        n_jobs=n_jobs,
     )
 
     return scores.mean(), scores.std(), scores

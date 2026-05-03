@@ -2,7 +2,7 @@
 
 ## Цель проекта
 
-Цель проекта -- построить полный ML-пайплайн для задачи регрессии из соревнования Kaggle **House Prices: Advanced Regression Techniques**.
+Цель проекта — построить полный ML-пайплайн для задачи регрессии из соревнования Kaggle **House Prices: Advanced Regression Techniques**.
 
 Задача состоит в том, чтобы предсказать итоговую стоимость продажи дома (`SalePrice`) на основе числовых и категориальных признаков, описывающих объект недвижимости.
 
@@ -13,8 +13,10 @@
 - построение baseline-модели;
 - отслеживание экспериментов;
 - улучшение качества модели через feature engineering;
-- сохранение лучшей модели;
-- генерацию submission-файла для Kaggle.
+- сравнение разных классов моделей;
+- настройку гиперпараметров;
+- простые ансамбли;
+- генерацию submission-файлов для Kaggle.
 
 ---
 
@@ -37,6 +39,7 @@
 ```text
 data/raw/train.csv
 data/raw/test.csv
+data/raw/data_description.txt
 ```
 
 Целевая переменная:
@@ -76,19 +79,24 @@ predictions = np.expm1(predictions_log)
 
 ## Текущий результат
 
-Текущий лучший результат на Kaggle Public Leaderboard: **0.13192**.
+Текущий лучший результат на Kaggle Public Leaderboard: **0.12360**.
 
-Этот результат получен с помощью простого ансамбля:
+Этот результат получен с помощью смешанного ансамбля:
 
 ```text
-0.5 * Ridge tuned + 0.5 * Lasso tuned
+0.5 * (Ridge + Lasso ensemble) + 0.5 * (XGBoost + LightGBM + CatBoost ensemble)
 ```
 
-- baseline Ridge: `0.13375`;
-- лучший текущий Ridge после feature engineering: `0.13261`;
-- ансамбль Ridge + Lasso: `0.13192`.
+Динамика улучшений:
 
-На текущем этапе самый заметный прирост дал не более сложный алгоритм, а простое усреднение двух регуляризованных линейных моделей.
+- baseline Ridge: `0.13375`;
+- Ridge + Lasso ensemble: `0.13192`;
+- XGBoost: `0.12784`;
+- CatBoost: `0.12502`;
+- boosting ensemble: `0.12454`;
+- linear + boosting ensemble: `0.12360`.
+
+Самый сильный прирост дал не один отдельный алгоритм, а ансамблирование моделей разных классов.
 
 ---
 
@@ -111,17 +119,18 @@ predictions = np.expm1(predictions_log)
 12. Tuning линейных моделей
 13. Отдельный preprocessing для tree-based моделей
 14. Простой ансамбль Ridge + Lasso
-15. Генерация submission-файлов
-16. Сохранение результатов экспериментов
+15. Boosting-модели: XGBoost, LightGBM, CatBoost
+16. Ансамбль boosting-моделей
+17. Смешанный ансамбль линейных моделей и boosting-моделей
+18. Генерация submission-файлов
+19. Сохранение результатов экспериментов
 ```
 
-Планируемые следующие шаги:
+Feature engineering, scoring, создание submission-файлов и сохранение результатов вынесены в модули:
 
 ```text
-1. Сделать единый train.py для воспроизводимого обучения
-2. Сравнить несколько моделей
-3. Подобрать гиперпараметры для лучших моделей
-4. Сохранить лучшую модель в models/
+src/features.py
+src/utils.py
 ```
 
 ---
@@ -146,7 +155,8 @@ house-price-regression/
 │   ├── 02_baseline.ipynb
 │   ├── 03_feature_engineering.ipynb
 │   ├── 04_modeling.ipynb
-│   └── 05_tuning_and_ensembling.ipynb
+│   ├── 05_tuning_and_ensembling.ipynb
+│   └── 06_boosting_models.ipynb
 │
 ├── reports/
 │   ├── figures/
@@ -162,17 +172,22 @@ house-price-regression/
 │   ├── submission_baseline.csv
 │   ├── submission_feature_engineering.csv
 │   ├── submission_ridge_tuned.csv
-│   ├── submission_5_ridge.csv
-│   ├── submission_6_lasso.csv
-│   ├── submission_7_elasticnet.csv
-│   ├── submission_8_random_forest.csv
-│   ├── submission_10_gradient_boosting.csv
+│   ├── submission_005_ridge.csv
+│   ├── submission_006_lasso.csv
+│   ├── submission_007_elasticnet.csv
+│   ├── submission_008_random_forest.csv
+│   ├── submission_010_gradient_boosting.csv
 │   ├── submission_011_ridge_tuned.csv
 │   ├── submission_012_lasso_tuned.csv
 │   ├── submission_013_elasticnet_tuned.csv
 │   ├── submission_014_random_forest_tree_prep.csv
 │   ├── submission_015_gradient_boosting_tree_prep.csv
-│   └── submission_017_ridge_lasso_ensemble.csv
+│   ├── submission_017_ridge_lasso_ensemble.csv
+│   ├── submission_018_xgboost.csv
+│   ├── submission_019_lightgbm.csv
+│   ├── submission_020_catboost.csv
+│   ├── submission_021_boosting_ensemble.csv
+│   └── submission_022_linear_boosting_ensemble.csv
 │
 ├── README.md
 ├── requirements.txt
@@ -183,7 +198,7 @@ house-price-regression/
 
 ## Baseline-подход
 
-Первая модель проекта -- **Ridge Regression**.
+Первая модель проекта — **Ridge Regression**.
 
 Ridge была выбрана как baseline-модель, потому что:
 
@@ -210,7 +225,6 @@ OneHotEncoder(handle_unknown="ignore")
 ```
 
 На baseline-этапе preprocessing намеренно сделан простым. Необходимо получить первый корректный результат и проверить, что весь пайплайн работает от загрузки данных до submission-файла.
-
 
 ---
 
@@ -248,29 +262,35 @@ Feature engineering вынесен в `src/features.py`.
 | 008 | RandomForestRegressor | 0.14206 | 0.01889 | 0.14325 | model comparison with feature engineering |
 | 009 | HistGradientBoostingRegressor | 0.13327 | 0.01670 | - | model comparison with feature engineering |
 | 010 | GradientBoostingRegressor | 0.13387 | 0.01760 | 0.13680 | model comparison with feature engineering |
-| 011 | Ridge tuned | - | - | 0.13261 | tuned linear model |
-| 012 | Lasso tuned | - | - | 0.13277 | tuned linear model |
-| 013 | ElasticNet tuned | - | - | 0.13286 | tuned linear model |
-| 014 | RandomForestRegressor tree-prep | - | - | 0.14289 | tree-specific preprocessing |
-| 015 | GradientBoostingRegressor tree-prep | - | - | 0.13395 | tree-specific preprocessing |
-| 017 | Ridge + Lasso ensemble | - | - | 0.13192 | 0.5 Ridge tuned + 0.5 Lasso tuned |
+| 011 | Ridge tuned | 0.14702 | after rerun | 0.13261 | tuned linear model |
+| 012 | Lasso tuned | 0.14171 | after rerun | 0.13277 | tuned linear model |
+| 013 | ElasticNet tuned | 0.14172 | after rerun | 0.13286 | tuned linear model |
+| 014 | RandomForestRegressor tree-prep | 0.14160 | 0.01904 | 0.14289 | tree-specific preprocessing |
+| 015 | GradientBoostingRegressor tree-prep | 0.13120 | 0.01600 | 0.13395 | tree-specific preprocessing |
+| 017 | Ridge + Lasso ensemble | OOF after rerun | after rerun | 0.13192 | 0.5 Ridge tuned + 0.5 Lasso tuned |
+| 018 | XGBoost | 0.12616 | 0.01700 | 0.12784 | boosting model with tree-specific preprocessing |
+| 019 | LightGBM | 0.13108 | 0.01810 | - | boosting model with tree-specific preprocessing |
+| 020 | CatBoost | 0.12345 | 0.01647 | 0.12502 | boosting model with tree-specific preprocessing |
+| 021 | XGBoost + LightGBM + CatBoost ensemble | OOF after rerun | - | 0.12454 | average of XGBoost, LightGBM and CatBoost submissions |
+| 022 | Linear ensemble + Boosting ensemble | OOF after rerun | - | 0.12360 | 0.5 linear ensemble + 0.5 boosting ensemble |
 
 Результаты также сохраняются в файл:
 
 ```text
 reports/model_results.csv
+```
+
 ---
 
-## Основные наблюдения
+## Методологические замечания
 
-- Удаление выбросов сильно улучшило локальный CV score, но ухудшило результат на Kaggle.
-- Feature engineering без удаления выбросов немного улучшил результат на Public Leaderboard.
-- Подбор `alpha` для Ridge Regression дал лучший результат на этапе feature engineering, но локальный CV почти не изменился.
-- В сравнении sklearn-моделей лучший Kaggle score снова показала Ridge Regression.
-- Lasso дал близкий результат, но немного уступил Ridge.
-- RandomForestRegressor и GradientBoostingRegressor не улучшили результат без дополнительной настройки.
-- HistGradientBoostingRegressor показал лучший локальный CV RMSE, но был временно исключён из submission-цикла из-за слишком долгого финального обучения в текущем pipeline.
-- Улучшение на локальной cross-validation не всегда гарантирует улучшение на скрытой test-выборке Kaggle.
+Public Leaderboard считается только на части test-выборки, поэтому результат `0.12360` нельзя считать окончательной гарантией лучшей обобщающей способности модели.
+
+Для более надёжной оценки в ноутбуках добавлены OOF-блоки:
+
+- OOF-оценка ансамбля Ridge + Lasso;
+- OOF-оценка boosting ensemble;
+- OOF-оценка mixed ensemble./
 
 ---
 
@@ -298,39 +318,48 @@ notebooks/02_baseline.ipynb
 notebooks/03_feature_engineering.ipynb
 notebooks/04_modeling.ipynb
 notebooks/05_tuning_and_ensembling.ipynb
+notebooks/06_boosting_models.ipynb
 ```
 
-4. После запуска submission-файлы будут сохранены в папке ```submissions/```
+4. После запуска submission-файлы будут сохранены в папке:
+
+```text
+submissions/
+```
+
+5. Результаты экспериментов будут сохранены в:
+
+```text
+reports/model_results.csv
+```
 
 ---
 
 ## Следующие шаги
 
-На текущем этапе лучший результат показывает ансамбль Ridge + Lasso.
+На текущем этапе лучший результат показывает смешанный ансамбль линейных моделей и boosting-моделей.
 
 Дальше можно двигаться в нескольких направлениях.
 
-### 1. Улучшение линейных моделей
+### 1. Улучшение ансамблей
 
-- расширить сетки параметров для Ridge, Lasso и ElasticNet;
-- попробовать разные веса ансамбля Ridge + Lasso;
+- проверить разные веса Ridge/Lasso;
+- проверить разные веса linear ensemble и boosting ensemble;
+- попробовать log-space ensembling;
 - проверить ансамбль Ridge + Lasso + ElasticNet;
-- сделать отбор признаков;
 - проверить устойчивость результата на разных validation splits.
 
-### 2. Отдельная настройка бустингов
+### 2. Отдельная настройка boosting-моделей
 
-- попробовать XGBoost;
-- попробовать LightGBM;
-- попробовать CatBoost;
+- расширить tuning XGBoost;
+- расширить tuning LightGBM;
+- расширить tuning CatBoost;
 - подобрать гиперпараметры;
-- проверить другой preprocessing для категориальных признаков;
-- сравнить результаты с текущим ансамблем Ridge + Lasso.
+- сравнить результаты с текущим mixed ensemble.
 
-### 3. Сохранение лучшей модели
+### 3. Финальный воспроизводимый пайплайн
 
-- выбрать лучшую модель по CV и Kaggle Public Leaderboard;
+- выбрать лучшую модель по CV/OOF и Kaggle Public Leaderboard;
 - обучить её на всех данных;
 - сохранить в `models/`;
 - создать `src/train.py` для воспроизводимого запуска всего пайплайна.
-
