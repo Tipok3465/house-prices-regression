@@ -76,16 +76,19 @@ predictions = np.expm1(predictions_log)
 
 ## Текущий результат
 
-Текущий лучший результат на Kaggle Public Leaderboard: **0.13261**.
+Текущий лучший результат на Kaggle Public Leaderboard: **0.13192**.
 
-Этот результат получен с помощью **Ridge Regression** после feature engineering.
+Этот результат получен с помощью простого ансамбля:
 
-Улучшение относительно первого baseline получилось небольшим:
+```text
+0.5 * Ridge tuned + 0.5 * Lasso tuned
+```
 
 - baseline Ridge: `0.13375`;
-- лучший текущий Ridge после feature engineering: `0.13261`.
+- лучший текущий Ridge после feature engineering: `0.13261`;
+- ансамбль Ridge + Lasso: `0.13192`.
 
-На текущем этапе регуляризованные линейные модели остаются сильным решением для этой задачи.
+На текущем этапе самый заметный прирост дал не более сложный алгоритм, а простое усреднение двух регуляризованных линейных моделей.
 
 ---
 
@@ -104,19 +107,21 @@ predictions = np.expm1(predictions_log)
 8. Feature engineering
 9. Проверка влияния удаления выбросов
 10. Подбор alpha для Ridge Regression
-11. Оценка качества через cross-validation
-12. Генерация submission-файлов
-13. Сохранение результатов экспериментов
+11. Сравнение sklearn-моделей
+12. Tuning линейных моделей
+13. Отдельный preprocessing для tree-based моделей
+14. Простой ансамбль Ridge + Lasso
+15. Генерация submission-файлов
+16. Сохранение результатов экспериментов
 ```
 
 Планируемые следующие шаги:
 
 ```text
-1. Вынести feature engineering в src/features.py
-2. Сделать единый train.py для воспроизводимого обучения
-3. Сравнить несколько моделей
-4. Подобрать гиперпараметры для лучших моделей
-5. Сохранить лучшую модель в models/
+1. Сделать единый train.py для воспроизводимого обучения
+2. Сравнить несколько моделей
+3. Подобрать гиперпараметры для лучших моделей
+4. Сохранить лучшую модель в models/
 ```
 
 ---
@@ -140,7 +145,8 @@ house-price-regression/
 │   ├── 01_eda.ipynb
 │   ├── 02_baseline.ipynb
 │   ├── 03_feature_engineering.ipynb
-│   └── 04_modeling.ipynb
+│   ├── 04_modeling.ipynb
+│   └── 05_tuning_and_ensembling.ipynb
 │
 ├── reports/
 │   ├── figures/
@@ -160,7 +166,13 @@ house-price-regression/
 │   ├── submission_6_lasso.csv
 │   ├── submission_7_elasticnet.csv
 │   ├── submission_8_random_forest.csv
-│   └── submission_10_gradient_boosting.csv
+│   ├── submission_10_gradient_boosting.csv
+│   ├── submission_011_ridge_tuned.csv
+│   ├── submission_012_lasso_tuned.csv
+│   ├── submission_013_elasticnet_tuned.csv
+│   ├── submission_014_random_forest_tree_prep.csv
+│   ├── submission_015_gradient_boosting_tree_prep.csv
+│   └── submission_017_ridge_lasso_ensemble.csv
 │
 ├── README.md
 ├── requirements.txt
@@ -236,13 +248,17 @@ Feature engineering вынесен в `src/features.py`.
 | 008 | RandomForestRegressor | 0.14206 | 0.01889 | 0.14325 | model comparison with feature engineering |
 | 009 | HistGradientBoostingRegressor | 0.13327 | 0.01670 | - | model comparison with feature engineering |
 | 010 | GradientBoostingRegressor | 0.13387 | 0.01760 | 0.13680 | model comparison with feature engineering |
+| 011 | Ridge tuned | - | - | 0.13261 | tuned linear model |
+| 012 | Lasso tuned | - | - | 0.13277 | tuned linear model |
+| 013 | ElasticNet tuned | - | - | 0.13286 | tuned linear model |
+| 014 | RandomForestRegressor tree-prep | - | - | 0.14289 | tree-specific preprocessing |
+| 015 | GradientBoostingRegressor tree-prep | - | - | 0.13395 | tree-specific preprocessing |
+| 017 | Ridge + Lasso ensemble | - | - | 0.13192 | 0.5 Ridge tuned + 0.5 Lasso tuned |
 
 Результаты также сохраняются в файл:
 
 ```text
 reports/model_results.csv
-```
-
 ---
 
 ## Основные наблюдения
@@ -281,6 +297,7 @@ notebooks/01_eda.ipynb
 notebooks/02_baseline.ipynb
 notebooks/03_feature_engineering.ipynb
 notebooks/04_modeling.ipynb
+notebooks/05_tuning_and_ensembling.ipynb
 ```
 
 4. После запуска submission-файлы будут сохранены в папке ```submissions/```
@@ -289,14 +306,15 @@ notebooks/04_modeling.ipynb
 
 ## Следующие шаги
 
-На текущем этапе сравнение базовых sklearn-моделей завершено. Лучший результат пока показывает Ridge Regression.
+На текущем этапе лучший результат показывает ансамбль Ridge + Lasso.
 
-Дальше можно двигаться в двух направлениях.
+Дальше можно двигаться в нескольких направлениях.
 
 ### 1. Улучшение линейных моделей
 
-- подобрать `alpha` для Ridge, Lasso и ElasticNet;
-- попробовать усреднение Ridge + Lasso;
+- расширить сетки параметров для Ridge, Lasso и ElasticNet;
+- попробовать разные веса ансамбля Ridge + Lasso;
+- проверить ансамбль Ridge + Lasso + ElasticNet;
 - сделать отбор признаков;
 - проверить устойчивость результата на разных validation splits.
 
@@ -304,7 +322,15 @@ notebooks/04_modeling.ipynb
 
 - попробовать XGBoost;
 - попробовать LightGBM;
+- попробовать CatBoost;
 - подобрать гиперпараметры;
 - проверить другой preprocessing для категориальных признаков;
-- сравнить результаты с текущей лучшей Ridge-моделью.
+- сравнить результаты с текущим ансамблем Ridge + Lasso.
+
+### 3. Сохранение лучшей модели
+
+- выбрать лучшую модель по CV и Kaggle Public Leaderboard;
+- обучить её на всех данных;
+- сохранить в `models/`;
+- создать `src/train.py` для воспроизводимого запуска всего пайплайна.
 
