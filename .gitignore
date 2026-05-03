@@ -6,3 +6,5 @@ __pycache__/
 .venv/
 .env
 notebooks/catboost_info
+models/*
+!models/.gitkeep

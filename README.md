@@ -347,10 +347,25 @@ reports/model_results.csv
 
 ---
 
-## Следующие шаги
+## Финальный воспроизводимый запуск
 
-На текущем этапе проекту больше не нужно просто добавлять новые модели. Основной следующий шаг — финализация и воспроизводимость лучшего pipeline.
+Финальный pipeline реализован в `src/train.py`.
 
-1. Создать `src/train.py` для воспроизводимого запуска лучшего pipeline.
-2. Сохранить лучшую модель или ансамбль в `models/`.
-3. Обновить README финальным воспроизводимым запуском.
+Запуск из корня проекта:
+
+```bash
+python src/train.py
+```
+Скрипт выполняет:
+1. загрузку `train.csv` и `test.csv`
+2. feature engineering через `src/features.py`;
+3. обучение Ridge и Lasso;
+4. обучение XGBoost, LightGBM и CatBoost;
+5. создание mixed ensemble;
+6. сохранение моделей в `models/`;
+7. сохранение финального submission-файла в `submissions/`.
+
+Финальный submission:
+```text
+submissions/submission_final_mixed_ensemble.csv
+```
