@@ -1,5 +1,13 @@
 # House Prices Regression
 
+## Ключевые моменты
+
+- Построен полный ML-пайплайн для табличной регрессии.
+- Лучший одиночный алгоритм по локальной CV: CatBoost.
+- Лучший Public LB submission: mixed ensemble, score 0.12360.
+- Public LB и OOF расходятся, поэтому финальный результат интерпретируется осторожно.
+- Финальный pipeline можно воспроизвести через `python src/train.py`.
+
 ## Цель проекта
 
 Цель проекта — построить полный ML-пайплайн для задачи регрессии из соревнования Kaggle **House Prices: Advanced Regression Techniques**.
@@ -302,7 +310,7 @@ Public Leaderboard считается только на части test-выбо
 
 - OOF-оценка ансамбля Ridge + Lasso;
 - OOF-оценка boosting ensemble;
-- OOF-оценка mixed ensemble./
+- OOF-оценка mixed ensemble.
 
 ---
 
