@@ -250,7 +250,7 @@ Feature engineering вынесен в `src/features.py`.
 
 ## Результаты экспериментов
 
-| Experiment | Model | CV RMSE | CV std | Kaggle score | Notes |
+| Experiment | Model | CV / OOF RMSE | CV std | Kaggle score | Notes |
 |---|---|---:|---:|---:|---|
 | 001 | Ridge | 0.14679 | 0.03932 | 0.13375 | baseline |
 | 002 | Ridge | 0.11489 | 0.00818 | 0.13435 | feature engineering + outlier removal |
@@ -262,23 +262,35 @@ Feature engineering вынесен в `src/features.py`.
 | 008 | RandomForestRegressor | 0.14206 | 0.01889 | 0.14325 | model comparison with feature engineering |
 | 009 | HistGradientBoostingRegressor | 0.13327 | 0.01670 | - | model comparison with feature engineering |
 | 010 | GradientBoostingRegressor | 0.13387 | 0.01760 | 0.13680 | model comparison with feature engineering |
-| 011 | Ridge tuned | 0.14702 | after rerun | 0.13261 | tuned linear model |
-| 012 | Lasso tuned | 0.14171 | after rerun | 0.13277 | tuned linear model |
-| 013 | ElasticNet tuned | 0.14172 | after rerun | 0.13286 | tuned linear model |
+| 011 | Ridge tuned | 0.14702 | 0.04052 | 0.13261 | tuned linear model |
+| 012 | Lasso tuned | 0.14171 | 0.04326 | 0.13277 | tuned linear model |
+| 013 | ElasticNet tuned | 0.14172 | 0.04305 | 0.13286 | tuned linear model |
 | 014 | RandomForestRegressor tree-prep | 0.14160 | 0.01904 | 0.14289 | tree-specific preprocessing |
 | 015 | GradientBoostingRegressor tree-prep | 0.13120 | 0.01600 | 0.13395 | tree-specific preprocessing |
-| 017 | Ridge + Lasso ensemble | OOF after rerun | after rerun | 0.13192 | 0.5 Ridge tuned + 0.5 Lasso tuned |
+| 017 | Ridge + Lasso ensemble | 0.14922 | - | 0.13192 | OOF RMSE; 0.5 Ridge + 0.5 Lasso |
 | 018 | XGBoost | 0.12616 | 0.01700 | 0.12784 | boosting model with tree-specific preprocessing |
 | 019 | LightGBM | 0.13108 | 0.01810 | - | boosting model with tree-specific preprocessing |
 | 020 | CatBoost | 0.12345 | 0.01647 | 0.12502 | boosting model with tree-specific preprocessing |
-| 021 | XGBoost + LightGBM + CatBoost ensemble | OOF after rerun | - | 0.12454 | average of XGBoost, LightGBM and CatBoost submissions |
-| 022 | Linear ensemble + Boosting ensemble | OOF after rerun | - | 0.12360 | 0.5 linear ensemble + 0.5 boosting ensemble |
+| 021 | XGBoost + LightGBM + CatBoost ensemble | 0.12530 | - | 0.12454 | OOF RMSE; boosting ensemble |
+| 022 | Linear ensemble + Boosting ensemble | 0.13535 | - | 0.12360 | OOF RMSE; mixed ensemble |
 
 Результаты также сохраняются в файл:
 
 ```text
 reports/model_results.csv
 ```
+---
+
+## Итоговые результаты
+
+На текущем этапе результаты можно интерпретировать так:
+
+- лучшая одиночная модель по локальной CV: **CatBoost** (`CV RMSE = 0.12345`);
+- лучший boosting submission: **XGBoost + LightGBM + CatBoost ensemble** (`Kaggle score = 0.12454`);
+- лучший Public Leaderboard submission: **Linear ensemble + Boosting ensemble** (`Kaggle score = 0.12360`);
+- важная оговорка: лучший Public Leaderboard score не обязательно означает лучшую обобщающую способность модели.
+
+Mixed ensemble дал лучший Kaggle Public Leaderboard score, но его OOF RMSE (`0.13535`) хуже, чем у CatBoost (`0.12345`) и boosting ensemble (`0.12530`).
 
 ---
 
@@ -337,29 +349,8 @@ reports/model_results.csv
 
 ## Следующие шаги
 
-На текущем этапе лучший результат показывает смешанный ансамбль линейных моделей и boosting-моделей.
+На текущем этапе проекту больше не нужно просто добавлять новые модели. Основной следующий шаг — финализация и воспроизводимость лучшего pipeline.
 
-Дальше можно двигаться в нескольких направлениях.
-
-### 1. Улучшение ансамблей
-
-- проверить разные веса Ridge/Lasso;
-- проверить разные веса linear ensemble и boosting ensemble;
-- попробовать log-space ensembling;
-- проверить ансамбль Ridge + Lasso + ElasticNet;
-- проверить устойчивость результата на разных validation splits.
-
-### 2. Отдельная настройка boosting-моделей
-
-- расширить tuning XGBoost;
-- расширить tuning LightGBM;
-- расширить tuning CatBoost;
-- подобрать гиперпараметры;
-- сравнить результаты с текущим mixed ensemble.
-
-### 3. Финальный воспроизводимый пайплайн
-
-- выбрать лучшую модель по CV/OOF и Kaggle Public Leaderboard;
-- обучить её на всех данных;
-- сохранить в `models/`;
-- создать `src/train.py` для воспроизводимого запуска всего пайплайна.
+1. Создать `src/train.py` для воспроизводимого запуска лучшего pipeline.
+2. Сохранить лучшую модель или ансамбль в `models/`.
+3. Обновить README финальным воспроизводимым запуском.
